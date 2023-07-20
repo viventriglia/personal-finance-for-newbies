@@ -1,4 +1,5 @@
 import streamlit as st
+from data_utils import get_collection, get_mongo_table
 
 from var import (
     GLOBAL_STREAMLIT_STYLE,
@@ -26,9 +27,16 @@ st.set_page_config(
 
 st.markdown(GLOBAL_STREAMLIT_STYLE, unsafe_allow_html=True)
 
-if "data" in st.session_state:
+if "demo" in st.session_state:
     df_storico = st.session_state["data"]
     df_anagrafica = st.session_state["dimensions"]
+elif "data" in st.session_state:
+    try:
+        # df_storico, df_anagrafica = get_mongo_table(st.session_state["mongo_uri"])
+        df_storico = st.session_state["data"]
+        df_anagrafica = st.session_state["dimensions"]
+    except:
+        st.error("🚨 Errore nel download da MongoDB")
 else:
     st.error("Oops... there's nothing to display. Go through 🏠 first to load the data")
     st.stop()
