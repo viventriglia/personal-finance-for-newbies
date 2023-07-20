@@ -155,3 +155,5 @@ cython_debug/
 *.xlsx
 !demo.xlsx
 !template.xlsx
+creds/**.json
+!creds/**.sample.json

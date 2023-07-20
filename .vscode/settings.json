@@ -21,6 +21,6 @@
     "python.formatting.provider": "black",
     "python.formatting.blackPath": "${workspaceFolder}/.venv/bin/black",
     "python.linting.enabled": true,
-    "workbench.colorTheme": "Night Owl",
+    "workbench.colorTheme": "Visual Studio Dark",
     "window.zoomLevel": 1,
 }

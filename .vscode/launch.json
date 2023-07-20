@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Slite",
+            "type": "python",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "${workspaceFolder}/src/0_🏠_Home.py"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/src"
+        }
+    ],
+    "compounds": []
+}
