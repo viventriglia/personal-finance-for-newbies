@@ -1,9 +1,13 @@
 import pandas as pd
 from pymongo import MongoClient
+import streamlit as st
+
+from var import CACHE_EXPIRE_SECONDS
 
 # Mongo utils
 
 
+@st.cache_data(ttl=CACHE_EXPIRE_SECONDS)
 def get_suffixes():
     yahurl = "https://help.yahoo.com/kb/SLN2310.html"
 
