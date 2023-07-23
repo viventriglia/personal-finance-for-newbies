@@ -15,13 +15,8 @@ st.markdown(GLOBAL_STREAMLIT_STYLE, unsafe_allow_html=True)
 if "demo" in st.session_state:
     st.error("Nooooo telecamera! No, no, no")
     st.stop()
-elif "data" in st.session_state:
-    try:
-        df_storico, df_anagrafica = get_mongo_table(st.session_state["mongo_uri"])
-    except:
-        st.error("🚨 Errore nel download da MongoDB")
-else:
-    st.error("Oops... there's nothing to display. Go through 🏠 first to load the data")
+if "mongo_uri" not in st.session_state:
+    st.error("🚨 Sezione disponibile solo con un MongoURI")
     st.stop()
 
 
@@ -49,7 +44,7 @@ def add_transaction():
     asset = st.text_input("Asset (es. World Stocks, Gold):")
     macroasset = st.text_input("Macro-asset (es. Bonds, Stocks):")
     transaction_date = st.date_input("Transaction Date:")
-    shares = st.number_input("Shares:", step=1.0, min_value=1.0)
+    shares = st.number_input("Shares:", step=1, min_value=1)
     price = st.number_input("Price per Share:")
     fees = st.number_input("Fees (if any):")
 
@@ -98,6 +93,10 @@ def add_transaction():
             ).upserted_id
             st.success("Transazione aggiunta con successo!")
             st.success(f"Ho aggiornato {int(a!=None)} campi anagrafica")
+            # Aggiorno i dati in memoria
+            st.session_state["data"], st.session_state["dimensions"] = get_mongo_table(
+                st.session_state["mongo_uri"]
+            )
 
 
 def main():

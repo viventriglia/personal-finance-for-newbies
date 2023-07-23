@@ -14,9 +14,13 @@ st.markdown(GLOBAL_STREAMLIT_STYLE, unsafe_allow_html=True)
 if "demo" in st.session_state:
     st.error("Nooooo telecamera! No, no, no")
     st.stop()
-elif "data" in st.session_state:
+
+if "data" in st.session_state:
     try:
-        df_storico, df_anagrafica = get_mongo_table(st.session_state["mongo_uri"])
+        df_storico, df_anagrafica = (
+            st.session_state["data"],
+            st.session_state["dimensions"],
+        )
     except:
         st.error("🚨 Errore nel download da MongoDB")
 else:
@@ -54,6 +58,10 @@ def remove_item(expander_title, collection):
             for item in selected_item:
                 collection.delete_one({"_id": item["_id"]})
             st.success("Elementi rimossi con successo.")
+            # Aggiorno i dati in memoria
+            st.session_state["data"], st.session_state["dimensions"] = get_mongo_table(
+                st.session_state["mongo_uri"]
+            )
 
 
 def main():

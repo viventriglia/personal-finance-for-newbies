@@ -48,7 +48,6 @@ if st.button("Carica i dati da Mongo", disabled=len(mongo_uri) == 0):
         mongo_uri
     )
     st.success("Dati caricati con successo")
-    st.balloons
 
 st.markdown("---")
 
