@@ -39,12 +39,13 @@ def id_in_coda(lista):
     return res
 
 
-def remove_item(expander_title, collection):
+def remove_item(expander_title, collection, tipo):
     with st.expander(expander_title, expanded=True):
-        items = collection.find()
-        item_names = list(items)
+        # items = collection.find()
+        # item_names = list(items)
+        item_names = collection.to_dict(orient="records")
         item_names = id_in_coda(item_names)
-        if len(item_names) == 0:
+        if collection.empty:
             st.warning("La collezione è vuota.")
             return
 
@@ -55,8 +56,9 @@ def remove_item(expander_title, collection):
         )
 
         if st.button("Rimuovi", key=f"{expander_title}_button"):
+            coll = get_collection(st.session_state["mongo_uri"], tipo)
             for item in selected_item:
-                collection.delete_one({"_id": item["_id"]})
+                coll.delete_one({"_id": item["_id"]})
             st.success("Elementi rimossi con successo.")
             # Aggiorno i dati in memoria
             st.session_state["data"], st.session_state["dimensions"] = get_mongo_table(
@@ -67,14 +69,11 @@ def remove_item(expander_title, collection):
 def main():
     st.title("Gestione Portafoglio Finanziario")
 
-    storico_col = get_collection(st.session_state["mongo_uri"], "storico")
-    anagrafica_col = get_collection(st.session_state["mongo_uri"], "anagrafica")
-
     st.header("Rimuovi Elemento dalla Collezione Storico")
-    remove_item("Rimuovi Transazione", storico_col)
+    remove_item("Rimuovi Transazione", df_storico, "storico")
 
     st.header("Rimuovi Elemento dalla Collezione Anagrafica")
-    remove_item("Rimuovi Anagrafica", anagrafica_col)
+    remove_item("Rimuovi Anagrafica", df_anagrafica, "anagrafica")
 
 
 main()

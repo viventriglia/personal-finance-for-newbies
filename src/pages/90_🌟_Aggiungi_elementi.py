@@ -101,7 +101,9 @@ def add_transaction():
 
 def main():
     st.title("App Gestione Portafoglio Finanziario")
-    add_transaction()
+    with st.expander("Aggiunta", expanded=True):
+        add_transaction()
+    # Rimozione
 
 
 main()
