@@ -1,10 +1,43 @@
-FROM python:3.10-slim
+FROM python:3.10-slim  as build
+
+RUN mkdir /app
+
+ENV VIRTUAL_ENV=/home/pf/.local \
+	PATH="/home/pf/.local/bin:$PATH" \
+    DEV_MODE=deploy
 
 WORKDIR /app
 
-COPY pyproject.toml poetry.lock ./
+RUN pip install uv
+COPY pyproject.toml .
 
-RUN pip install poetry==1.8.4 && poetry install --no-root --no-dev
+RUN uv venv $VIRTUAL_ENV && \
+	uv pip install setuptools && \
+	uv tool install poetry --python-preference only-managed
+
+RUN if [ "${DEV_MODE}" != "prototype" ]; then \
+	uv pip install -r pyproject.toml --no-cache; \
+	else \
+	uvx poetry install --with dev; \
+	fi
+
+
+FROM python:3.10-slim
+
+COPY --from=build "/home/pf/.local" "/home/pf/.local/"
+ENV PATH="${PATH}:/home/pf/.local/bin"
+
+RUN mkdir /app
+RUN mkdir -p /home/pf/.local/share
+RUN mkdir -p /home/pf/.local/lib
+RUN chown -R pf:pf /app
+RUN chown -R pf:pf /home/pf/.local/share/ 2>/dev/null
+RUN chown -R pf:pf /home/pf/.local/lib/ 2>/dev/null
+
+USER pfs
+ENV PYTHONPATH "${PYTHONPATH}:/app"
+
+WORKDIR /app
 
 COPY . .
 
