@@ -3,7 +3,6 @@ name = "personal-finance-for-newbies"
 version = "0.1.2"
 description = ""
 authors = ["Vincenzo <vincenzo.ventriglia@outlook.com>"]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
