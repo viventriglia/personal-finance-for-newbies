@@ -43,7 +43,6 @@ RUN chown -R pf:pf /home/pf/.local/share/ 2>/dev/null
 RUN chown -R pf:pf /home/pf/.local/lib/ 2>/dev/null
 
 USER pf
-ENV PYTHONPATH "${PYTHONPATH}:/app"
 WORKDIR /app
 COPY . .
 EXPOSE 8501
