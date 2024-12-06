@@ -1,4 +1,4 @@
-FROM python:3.10-slim  as build
+FROM python:3.10-slim AS build
 
 RUN mkdir /app
 
