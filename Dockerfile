@@ -4,18 +4,18 @@ RUN mkdir /app
 
 ENV VIRTUAL_ENV=/home/pf/.local \
 	PATH="/home/pf/.local/bin:$PATH" \
-	DEV_MODE=deploy
+	INSTALL_MODE=poetry
 
 WORKDIR /app
 
 RUN pip install uv
-COPY pyproject.toml .
+COPY pyproject.toml  poetry.lock* ./
 
 RUN uv venv $VIRTUAL_ENV && \
 	uv pip install setuptools && \
 	uv tool install poetry --python-preference only-managed
 
-RUN if [ "${DEV_MODE}" != "prototype" ]; then \
+RUN if [ "${INSTALL_MODE}" != "uv" ]; then \
 	uv pip install -r pyproject.toml --no-cache; \
 	else \
 	uvx poetry install --with dev; \

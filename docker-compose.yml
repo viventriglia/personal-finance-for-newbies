@@ -1,0 +1,12 @@
+services:
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pfn
+    ports:
+      - 8501:8501
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    command: streamlit run ./src/0_🏠_Home.py --server.port=8501 --server.address=0.0.0.0
