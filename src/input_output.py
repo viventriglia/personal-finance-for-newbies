@@ -5,8 +5,15 @@ from typing import Tuple, Dict, List
 import streamlit as st
 import yfinance as yf
 import pandas as pd
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
 from var import CACHE_EXPIRE_SECONDS
+
+
+@st.cache_resource
+def init_connection() -> MongoClient:
+    return MongoClient(st.secrets["mongo"]["uri"], server_api=ServerApi("1"))
 
 
 def write_disclaimer() -> None:
@@ -48,34 +55,93 @@ def write_load_message(df_data: pd.DataFrame, df_dimensions: pd.DataFrame) -> No
     )
 
 
+# @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
+# def load_data(full_path: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
+#     df_storico = pd.read_excel(
+#         full_path,
+#         sheet_name="Transactions History",
+#         dtype={
+#             "Exchange": str,
+#             "Ticker": str,
+#             "Shares": int,
+#             "Price (€)": float,
+#             "Fees (€)": float,
+#         },
+#     ).rename(
+#         columns={
+#             "Exchange": "exchange",
+#             "Ticker": "ticker",
+#             "Transaction Date": "transaction_date",
+#             "Shares": "shares",
+#             "Price (€)": "price",
+#             "Fees (€)": "fees",
+#         }
+#     )
+#     df_storico["ap_amount"] = df_storico["shares"] * df_storico["price"]
+#     df_storico["ticker_yf"] = df_storico["ticker"] + "." + df_storico["exchange"]
+
+#     df_anagrafica = pd.read_excel(
+#         full_path, sheet_name="Securities Master Table", dtype=str
+#     ).rename(
+#         columns={
+#             "Exchange": "exchange",
+#             "Ticker": "ticker",
+#             "Security Name": "name",
+#             "Asset Class": "asset_class",
+#             "Macro Asset Class": "macro_asset_class",
+#         }
+#     )
+#     df_anagrafica["ticker_yf"] = (
+#         df_anagrafica["ticker"] + "." + df_anagrafica["exchange"]
+#     )
+
+#     # Drop columns not belonging to the excel tables
+#     df_storico = df_storico.drop(
+#         columns=[col_ for col_ in df_storico.columns if col_.startswith("Unnamed")]
+#     )
+
+#     write_load_message(df_data=df_storico, df_dimensions=df_anagrafica)
+#     return df_storico, df_anagrafica
+
+
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
 def load_data(full_path: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    df_storico = pd.read_excel(
-        full_path,
-        sheet_name="Transactions History",
-        dtype={
-            "Exchange": str,
-            "Ticker": str,
-            "Shares": int,
-            "Price (€)": float,
-            "Fees (€)": float,
-        },
-    ).rename(
-        columns={
-            "Exchange": "exchange",
-            "Ticker": "ticker",
-            "Transaction Date": "transaction_date",
-            "Shares": "shares",
-            "Price (€)": "price",
-            "Fees (€)": "fees",
-        }
-    )
-    df_storico["ap_amount"] = df_storico["shares"] * df_storico["price"]
-    df_storico["ticker_yf"] = df_storico["ticker"] + "." + df_storico["exchange"]
+    client = init_connection()
 
-    df_anagrafica = pd.read_excel(
-        full_path, sheet_name="Securities Master Table", dtype=str
-    ).rename(
+    transactions = client["mock"]["transactions"]
+    securities = client["mock"]["securities"]
+
+    df_transactions = (
+        pd.DataFrame(list(transactions.find({}, {"_id": 0})))
+        .astype(
+            {
+                "Exchange": str,
+                "Ticker": str,
+                "Shares": int,
+                "Price (€)": float,
+                "Fees (€)": float,
+            }
+        )
+        .rename(
+            columns={
+                "Exchange": "exchange",
+                "Ticker": "ticker",
+                "Transaction Date": "transaction_date",
+                "Shares": "shares",
+                "Price (€)": "price",
+                "Fees (€)": "fees",
+            }
+        )
+    )
+    df_transactions["ap_amount"] = df_transactions["shares"] * df_transactions["price"]
+    df_transactions["ticker_yf"] = (
+        df_transactions["ticker"] + "." + df_transactions["exchange"]
+    )
+    df_transactions["transaction_date"] = pd.to_datetime(
+        df_transactions["transaction_date"], dayfirst=True
+    )
+
+    df_securities = pd.DataFrame(list(securities.find({}, {"_id": 0}))).rename(
         columns={
             "Exchange": "exchange",
             "Ticker": "ticker",
@@ -84,17 +150,12 @@ def load_data(full_path: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
             "Macro Asset Class": "macro_asset_class",
         }
     )
-    df_anagrafica["ticker_yf"] = (
-        df_anagrafica["ticker"] + "." + df_anagrafica["exchange"]
+    df_securities["ticker_yf"] = (
+        df_securities["ticker"] + "." + df_securities["exchange"]
     )
 
-    # Drop columns not belonging to the excel tables
-    df_storico = df_storico.drop(
-        columns=[col_ for col_ in df_storico.columns if col_.startswith("Unnamed")]
-    )
-
-    write_load_message(df_data=df_storico, df_dimensions=df_anagrafica)
-    return df_storico, df_anagrafica
+    write_load_message(df_data=df_transactions, df_dimensions=df_securities)
+    return df_transactions, df_securities
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
