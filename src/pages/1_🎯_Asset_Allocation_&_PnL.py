@@ -9,7 +9,7 @@ from var import (
     FAVICON,
     DICT_GROUPBY_LEVELS,
 )
-from input_output import write_disclaimer, get_last_closing_price
+from input_output import write_disclaimer, login_or_register, get_last_closing_price
 from aggregation import (
     aggregate_by_ticker,
     get_pnl_by_asset_class,
@@ -26,6 +26,16 @@ st.set_page_config(
 )
 
 st.markdown(GLOBAL_STREAMLIT_STYLE, unsafe_allow_html=True)
+
+if "user" not in st.session_state:
+    login_or_register()
+
+st.sidebar.write(
+    f"Logged in as <b>{st.session_state['user']}</b>", unsafe_allow_html=True
+)
+if st.sidebar.button("Logout"):
+    del st.session_state["user"]
+    st.rerun()
 
 if "data" in st.session_state:
     df_storico = st.session_state["data"]

@@ -1,6 +1,6 @@
 import streamlit as st
 
-from input_output import write_disclaimer, get_max_common_history
+from input_output import write_disclaimer, login_or_register, get_max_common_history
 from risk import get_drawdown, get_max_dd, get_portfolio_relative_risk_contribution
 from returns import get_period_returns
 from plot import plot_drawdown, plot_horizontal_bar
@@ -21,6 +21,16 @@ st.set_page_config(
 )
 
 st.markdown(GLOBAL_STREAMLIT_STYLE, unsafe_allow_html=True)
+
+if "user" not in st.session_state:
+    login_or_register()
+
+st.sidebar.write(
+    f"Logged in as <b>{st.session_state['user']}</b>", unsafe_allow_html=True
+)
+if st.sidebar.button("Logout"):
+    del st.session_state["user"]
+    st.rerun()
 
 if "data" in st.session_state:
     df_transactions = st.session_state["data"]
