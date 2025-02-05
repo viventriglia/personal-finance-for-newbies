@@ -16,6 +16,7 @@ openpyxl = "^3.1.2"
 streamlit = "1.39.0"
 black = "^23.3.0"
 pymongo = "^4.11"
+bcrypt = "^4.2.1"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"
