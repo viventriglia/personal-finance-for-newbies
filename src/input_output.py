@@ -87,7 +87,7 @@ def load_data(full_path: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
     client = init_connection()
 
     transactions = client["mock"]["transactions"]
-    securities = client["mock"]["securities"]
+    securities = client["mock"]["assets"]
 
     df_transactions = (
         pd.DataFrame(list(transactions.find({}, {"_id": 0})))
