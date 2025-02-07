@@ -21,6 +21,14 @@ st.set_page_config(
 
 st.markdown(GLOBAL_STREAMLIT_STYLE, unsafe_allow_html=True)
 
+if "user" in st.session_state:
+    st.sidebar.write(
+        f"Logged in as <b>{st.session_state['user']}</b>", unsafe_allow_html=True
+    )
+    if st.sidebar.button("Logout"):
+        del st.session_state["user"]
+        st.rerun()
+
 st.title(f"Welcome to Personal Finance for Newbies!")
 st.text(f"v{APP_VERSION}")
 
