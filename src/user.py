@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import bcrypt
 
 from mongo import init_connection
@@ -18,7 +20,14 @@ def register_user(username: str, psw: str) -> bool:
         return False
     else:
         hashed_psw = hash_psw(psw)
-        users.insert_one({"username": username, "password": hashed_psw})
+        users.insert_one(
+            {
+                "username": username,
+                "password": hashed_psw,
+                "created_at": datetime.utcnow(),
+                "last_login": None,
+            }
+        )
         return True
 
 
@@ -27,6 +36,9 @@ def login_user(username: str, psw: str) -> bool:
     users = client["pfn"]["users"]
     usr = users.find_one({"username": username})
     if usr and verify_psw(psw, usr["password"]):
+        users.update_one(
+            {"username": username}, {"$set": {"last_login": datetime.utcnow()}}
+        )
         return True
     else:
         return False
