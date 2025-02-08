@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import bcrypt
+import pandas as pd
 
 from mongo import init_connection
 
@@ -42,3 +43,26 @@ def login_user(username: str, psw: str) -> bool:
         return True
     else:
         return False
+
+
+def get_user_transactions(user_id: str) -> pd.DataFrame:
+    transactions = init_connection()["pfn"]["transactions"]
+    user_transactions = transactions.find({"user_id": user_id})
+    df = pd.DataFrame(list(user_transactions))
+
+    cols = ["ticker", "transaction_type", "quantity", "price", "date"]
+
+    if df.empty:
+        return pd.DataFrame(columns=cols)
+    if "asset" in df.columns:
+        df["ticker"] = df["asset"].apply(lambda x: x.get("ticker", ""))
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%d-%m-%Y")
+    df.index += 1
+
+    missing_cols = [col for col in cols if col not in df.columns]
+    if missing_cols:
+        for col in missing_cols:
+            df[col] = ""
+
+    return df[cols]
