@@ -1,25 +1,47 @@
 from datetime import datetime
 
 import streamlit as st
-import pandas as pd
 
 from mongo import init_connection
+from user import get_user_transactions
+from input_output import login_or_register
+
+if "user" not in st.session_state:
+    login_or_register()
+
+user_id = st.session_state["user"]
+st.sidebar.write(f"Logged in as <b>{user_id}</b>", unsafe_allow_html=True)
+if st.sidebar.button("Logout"):
+    del st.session_state["user"]
+    st.rerun()
 
 client = init_connection()
 transactions = client["pfn"]["transactions"]
 assets = client["pfn"]["assets"]
 
-# Form per registrare una transazione
 with st.form("transaction_form"):
     col_l, col_m, col_r = st.columns([1, 0.2, 0.6])
-    ticker = col_l.text_input("Ticker", placeholder="e.g., MWRD.MI or FLXI.DE").upper()
+    ticker = col_l.text_input(
+        "Ticker",
+        placeholder="e.g., MWRD.MI or FLXI.DE",
+        help="""
+        Some tickers are ambigous and require you to specify the exchange.
+
+        For example, to get data for VWCE you should write VWCE.MI for Borsa Italiana,
+        VWCE.DE for XETRA, and so on. More on Yahoo Finance Market Coverage: https://help.yahoo.com/kb/SLN2310.html
+        """,
+    ).upper()
     transaction_type = col_r.radio("Transaction type", ["Buy", "Sell"], horizontal=True)
     col_l, col_m, col_r = st.columns([1, 1, 1])
     quantity = col_l.number_input("Shares", min_value=1, step=1)
     price = col_m.number_input(
         "Price per share (€)", min_value=0.00, step=0.01, format="%.2f"
     )
-    date = col_r.date_input("Transaction date", datetime.today().date())
+    date = col_r.date_input(
+        "Transaction date",
+        datetime.today().date(),
+        format="DD/MM/YYYY",
+    )
 
     submitted = st.form_submit_button("Save transaction", icon="💾")
 
@@ -78,7 +100,7 @@ if "new_asset_ticker" in st.session_state:
             f"{st.session_state['new_asset_ticker']} successfully saved!", icon="✅"
         )
 
-        # Una volta che l'asset è stato aggiunto, salva anche la transazione
+        # Once the asset has been created, save the transaction as well
         transaction_data = {
             "user_id": st.session_state["user"],
             "asset": {"ticker": st.session_state["new_asset_ticker"]},
@@ -94,26 +116,35 @@ if "new_asset_ticker" in st.session_state:
         del st.session_state["new_asset_ticker"]
 
 
-def get_user_transactions(user_id: str) -> pd.DataFrame:
-    user_transactions = transactions.find({"user_id": user_id})
-    df = pd.DataFrame(list(user_transactions))
+with st.expander("Your transactions"):
+    user_df = get_user_transactions(user_id)
 
-    if not df.empty:
-        df["ticker"] = df["asset"].apply(lambda x: x["ticker"])
-        df["date"] = pd.to_datetime(df["date"]).dt.strftime("%d-%m-%Y")
-        df.index += 1
-    return df[["ticker", "transaction_type", "quantity", "price", "date"]]
-
-
-if "user" in st.session_state:
-    user_id = st.session_state["user"]
-
-    with st.expander("Visualizza le tue transazioni"):
-        user_df = get_user_transactions(user_id)
-
-        if not user_df.empty:
-            st.dataframe(user_df)
-        else:
-            st.warning("Non hai ancora registrato alcuna transazione.")
-else:
-    st.warning("Per visualizzare le transazioni, effettua il login.")
+    if not user_df.empty:
+        st.write("Tip: you can edit your transactions by double-clicking on a field!")
+        column_config = {
+            "transaction_type": st.column_config.SelectboxColumn(
+                "Transaction type", options=["Buy", "Sell"], required=True
+            ),
+            "quantity": st.column_config.NumberColumn(
+                "Shares", min_value=1, step=1, required=True
+            ),
+            "ticker": st.column_config.TextColumn("Ticker", required=True),
+            "price": st.column_config.NumberColumn(
+                "Price per share",
+                min_value=0.0,
+                step=0.01,
+                format="€ %.2f",
+                required=True,
+            ),
+            # "date": st.column_config.DateColumn(
+            #     "Transaction date", format="DD-MM-YYYY", required=True
+            # ),
+        }
+        st.data_editor(
+            user_df,
+            column_config=column_config,
+            use_container_width=True,
+            num_rows="fixed",
+        )
+    else:
+        st.write("You have not yet registered any transaction")
