@@ -18,9 +18,8 @@ RUN uv venv $VIRTUAL_ENV && \
 RUN if [ "${INSTALL_MODE}" != "uv" ]; then \
 	uv pip install -r pyproject.toml --no-cache; \
 	else \
-	uvx poetry install --with dev; \
+	uvx poetry install --without dev --no-update; \
 	fi
-
 
 
 FROM python:3.10-slim
@@ -30,14 +29,9 @@ ENV PATH="${PATH}:/home/pf/.local/bin"
 
 RUN groupadd --gid 1000 pf \
 	&& useradd --uid 1000 --gid 1000 -m pf \
-	&& apt-get update \
-	&& apt-get install -y sudo \
-	&& echo pf ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/pf \
-	&& chmod 0440 /etc/sudoers.d/pf 
+	&& apt-get update
 
-RUN mkdir /app
-RUN mkdir -p /home/pf/.local/share
-RUN mkdir -p /home/pf/.local/lib
+RUN mkdir -p /app /home/pf/.local/share /home/pf/.local/lib
 RUN chown -R pf:pf /app
 RUN chown -R pf:pf /home/pf/.local/share/ 2>/dev/null
 RUN chown -R pf:pf /home/pf/.local/lib/ 2>/dev/null
