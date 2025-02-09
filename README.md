@@ -52,6 +52,11 @@ Alternatively, on Windows you simply launch
 
 - `scripts/run-web-app.ps1`
 
+### Docker-compose
+To build and run the app's Docker image:
+
+- `docker compose up streamlit`
+
 ## How can I use my own data?
 To load and use your data, download and fill in the template with your accumulation plan's buy/sell transactions and upload it. Make sure you fill it in correctly. The fields to be entered are:
 
