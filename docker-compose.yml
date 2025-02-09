@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - INSTALL_MODE=${INSTALL_MODE:-uv}
     container_name: pfn
     ports:
       - 8501:8501

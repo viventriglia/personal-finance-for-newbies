@@ -2,9 +2,9 @@ FROM python:3.10-slim AS build
 
 RUN mkdir /app
 
+ARG INSTALL_MODE
 ENV VIRTUAL_ENV=/home/pf/.local \
-	PATH="/home/pf/.local/bin:$PATH" \
-	INSTALL_MODE=poetry
+	PATH="/home/pf/.local/bin:$PATH" 
 
 WORKDIR /app
 
@@ -15,12 +15,11 @@ RUN uv venv $VIRTUAL_ENV && \
 	uv pip install setuptools && \
 	uv tool install poetry --python-preference only-managed
 
-RUN if [ "${INSTALL_MODE}" != "uv" ]; then \
+RUN if test "${INSTALL_MODE}" = "uv"; then \
 	uv pip install -r pyproject.toml --no-cache; \
 	else \
-	uvx poetry install --without dev --no-update; \
+	uvx poetry install --without dev --no-root; \
 	fi
-
 
 FROM python:3.10-slim
 

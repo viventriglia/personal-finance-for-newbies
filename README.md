@@ -57,6 +57,8 @@ To build and run the app's Docker image:
 
 - `docker compose up streamlit`
 
+You can choose, by editing the `.env` file in the project root, whether to install dependencies via `poetry` or via `uv` (a library written in RUST that greatly speeds up the installation of python libraries)
+
 ## How can I use my own data?
 To load and use your data, download and fill in the template with your accumulation plan's buy/sell transactions and upload it. Make sure you fill it in correctly. The fields to be entered are:
 
