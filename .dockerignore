@@ -1,6 +1,8 @@
 .venv/
 .vscode/
+.git/
 jupyters/
 README.md
 LICENSE
 Dockerfile
+docker-compose.yml
