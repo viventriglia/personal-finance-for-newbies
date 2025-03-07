@@ -87,6 +87,3 @@ Here's an hopefully up-to-date **list of things to build**:
     - asset allocation
 - Rolling Sharpe ratio chart
 - Sortino and Calmar ratios
-- Docker compose, with these services:
-    - `jupyter notebook` for prototyping
-    - `streamlit` to launch the web-app
