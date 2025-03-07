@@ -57,6 +57,7 @@ def get_relative_risk_contributions(
     return relative_risk_contrib
 
 
+@st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
 def get_portfolio_relative_risk_contribution(
     df_prices: pd.DataFrame,
     df_shares: pd.DataFrame,

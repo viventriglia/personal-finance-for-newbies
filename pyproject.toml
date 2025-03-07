@@ -3,22 +3,21 @@ name = "personal-finance-for-newbies"
 version = "0.1.2"
 description = ""
 authors = ["Vincenzo <vincenzo.ventriglia@outlook.com>"]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pandas = "^2.0.2"
+pandas = "2.2.3"
 yfinance = "0.2.48"
-plotly = "^5.15.0"
-numpy = "^1.25.0"
-matplotlib = "^3.7.1"
-openpyxl = "^3.1.2"
+plotly = "5.24.1"
+numpy = "1.26.4"
+matplotlib = "3.10.0"
+openpyxl = "3.1.5"
 streamlit = "1.39.0"
-black = "^23.3.0"
+black = "23.12.1"
 
 [tool.poetry.dev-dependencies]
-jupyter = "^1.0.0"
-ipykernel = "^6.23.2"
+notebook = "6.5.4"
+traitlets = "5.9.0"
 
 [build-system]
 requires = ["poetry-core"]
