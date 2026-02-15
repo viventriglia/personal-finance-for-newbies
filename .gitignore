@@ -38,10 +38,6 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Translations
-*.mo
-*.pot
-
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -53,11 +49,6 @@ ipython_config.py
 .env
 .venv
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
 # data
 !data/in/demo.xlsx
 !data/in/template.xlsx
@@ -65,3 +56,6 @@ data/in/*.pickle
 
 # streamlit
 .streamlit/secrets.toml
+
+# vscode
+.vscode/

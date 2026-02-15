@@ -2,7 +2,7 @@
 name = "personal-finance-for-newbies"
 version = "0.1.2"
 description = ""
-authors = ["Vincenzo <vincenzo.ventriglia@outlook.com>"]
+authors = ["Vincenzo Ventriglia <vincenzo.ventriglia@outlook.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -14,11 +14,11 @@ numpy = "^1.25.0"
 matplotlib = "^3.7.1"
 openpyxl = "^3.1.2"
 streamlit = "1.39.0"
-black = "^23.3.0"
 pymongo = "^4.11"
 bcrypt = "^4.2.1"
 
 [tool.poetry.dev-dependencies]
+black = "^23.3.0"
 jupyter = "^1.0.0"
 ipykernel = "^6.23.2"
 

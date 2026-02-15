@@ -1,6 +1,4 @@
-from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Tuple, Dict, List
 
 import streamlit as st
 import yfinance as yf
@@ -82,62 +80,80 @@ def login_or_register() -> None:
     st.stop()
 
 
-@st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def load_data(full_path: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
+@st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner="Fetching data from DB")
+def load_data(
+    username: str, is_mock: bool = False
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     client = init_connection()
 
-    transactions = client["mock"]["transactions"]
-    securities = client["mock"]["assets"]
+    if is_mock:
+        db = client["mock"]
+        cursor_t = db["transactions"].find({}, {"_id": 0})
+        df_t = pd.DataFrame(list(cursor_t))
 
-    df_transactions = (
-        pd.DataFrame(list(transactions.find({}, {"_id": 0})))
-        .astype(
-            {
-                "Exchange": str,
-                "Ticker": str,
-                "Shares": int,
-                "Price (€)": float,
-                "Fees (€)": float,
-            }
-        )
-        .rename(
-            columns={
-                "Exchange": "exchange",
-                "Ticker": "ticker",
-                "Transaction Date": "transaction_date",
-                "Shares": "shares",
-                "Price (€)": "price",
-                "Fees (€)": "fees",
-            }
-        )
-    )
-    df_transactions["ap_amount"] = df_transactions["shares"] * df_transactions["price"]
-    df_transactions["ticker_yf"] = (
-        df_transactions["ticker"] + "." + df_transactions["exchange"]
-    )
-    df_transactions["transaction_date"] = pd.to_datetime(
-        df_transactions["transaction_date"], dayfirst=True
-    )
+        if not df_t.empty:
+            df_t = df_t.rename(
+                columns={
+                    "Shares": "shares",
+                    "Transaction Date": "transaction_date",
+                    "Price (€)": "price",
+                    "Fees (€)": "fees",
+                }
+            )
+            df_t["ticker_yf"] = df_t["Ticker"] + "." + df_t["Exchange"]
+            df_t["transaction_date"] = pd.to_datetime(
+                df_t["transaction_date"], dayfirst=True
+            )
 
-    df_securities = pd.DataFrame(list(securities.find({}, {"_id": 0}))).rename(
-        columns={
-            "Exchange": "exchange",
-            "Ticker": "ticker",
-            "Security Name": "name",
-            "Asset Class": "asset_class",
-            "Macro Asset Class": "macro_asset_class",
-        }
-    )
-    df_securities["ticker_yf"] = (
-        df_securities["ticker"] + "." + df_securities["exchange"]
-    )
+        cursor_a = db["assets"].find({}, {"_id": 0})
+        df_a = pd.DataFrame(list(cursor_a))
+        if not df_a.empty:
+            df_a = df_a.rename(
+                columns={
+                    "Security Name": "name",
+                    "Asset Class": "asset_class",
+                    "Macro Asset Class": "macro_asset_class",
+                }
+            )
+            df_a["ticker_yf"] = df_a["Ticker"] + "." + df_a["Exchange"]
 
-    write_load_message(df_data=df_transactions, df_dimensions=df_securities)
-    return df_transactions, df_securities
+    else:
+        db = client["pfn"]
+        cursor_t = db["transactions"].find({"user_id": username}, {"_id": 0})
+        df_t = pd.DataFrame(list(cursor_t))
+
+        if not df_t.empty:
+            if "asset" in df_t.columns:
+                df_t["ticker_yf"] = df_t["asset"].apply(
+                    lambda x: x.get("ticker") if isinstance(x, dict) else x
+                )
+
+            df_t = df_t.rename(
+                columns={
+                    "quantity": "shares",
+                    "date": "transaction_date",
+                    "price": "price",
+                }
+            )
+            if "fees" not in df_t.columns:
+                df_t["fees"] = 0.0
+            df_t["transaction_date"] = pd.to_datetime(df_t["transaction_date"])
+
+        cursor_a = db["assets"].find({}, {"_id": 0})
+        df_a = pd.DataFrame(list(cursor_a))
+        if not df_a.empty:
+            df_a = df_a.rename(columns={"ticker": "ticker_yf", "security_name": "name"})
+
+    if not df_t.empty:
+        df_t["shares"] = df_t["shares"].astype(float)
+        df_t["price"] = df_t["price"].astype(float)
+        df_t["ap_amount"] = df_t["shares"] * df_t["price"]
+
+    return df_t, df_a
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def get_last_closing_price(ticker_list: List[str]) -> pd.DataFrame:
+def get_last_closing_price(ticker_list: list[str]) -> pd.DataFrame:
     df_last_closing = pd.DataFrame(
         columns=["ticker_yf", "last_closing_date", "price"],
         index=range(len(ticker_list)),
@@ -172,7 +188,7 @@ def get_last_closing_price(ticker_list: List[str]) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def get_last_closing_price_from_api(ticker: str, days_of_delay: int = 5) -> List:
+def get_last_closing_price_from_api(ticker: str, days_of_delay: int = 5) -> list:
     today = datetime.utcnow()
     delayed = today - timedelta(days=days_of_delay)
 
@@ -194,7 +210,7 @@ def get_last_closing_price_from_api(ticker: str, days_of_delay: int = 5) -> List
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def get_full_price_history(ticker_list: List[str]) -> Dict:
+def get_full_price_history(ticker_list: list[str]) -> dict:
     df_history = dict()
 
     for ticker_ in ticker_list:
@@ -212,7 +228,7 @@ def get_full_price_history(ticker_list: List[str]) -> Dict:
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def get_max_common_history(ticker_list: List[str]) -> pd.DataFrame:
+def get_max_common_history(ticker_list: list[str]) -> pd.DataFrame:
     full_history = get_full_price_history(ticker_list)
     df_full_history = pd.concat(
         [full_history[t_] for t_ in ticker_list],
