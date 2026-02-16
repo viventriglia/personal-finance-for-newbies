@@ -1,23 +1,27 @@
 [tool.poetry]
 name = "personal-finance-for-newbies"
-version = "0.1.2"
+version = "1.0.0"
 description = ""
-authors = ["Vincenzo <vincenzo.ventriglia@outlook.com>"]
+authors = ["Vincenzo Ventriglia <vincenzo.ventriglia@outlook.com>"]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pandas = "2.2.3"
-yfinance = "0.2.48"
-plotly = "5.24.1"
-numpy = "1.26.4"
-matplotlib = "3.10.0"
-openpyxl = "3.1.5"
+pandas = "^2.0.2"
+yfinance = "0.2.59"
+plotly = "^5.15.0"
+numpy = "^1.25.0"
+matplotlib = "^3.7.1"
+openpyxl = "^3.1.2"
 streamlit = "1.39.0"
-black = "23.12.1"
+pymongo = "^4.11"
+bcrypt = "^4.2.1"
+pydantic = "^2.12.5"
 
 [tool.poetry.dev-dependencies]
-notebook = "6.5.4"
-traitlets = "5.9.0"
+black = "^23.3.0"
+jupyter = "^1.0.0"
+ipykernel = "^6.23.2"
 
 [build-system]
 requires = ["poetry-core"]

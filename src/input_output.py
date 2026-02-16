@@ -1,12 +1,12 @@
-from pathlib import Path
 from datetime import datetime, timedelta
-from typing import Tuple, Dict, List
 
 import streamlit as st
 import yfinance as yf
 import pandas as pd
 
 from var import CACHE_EXPIRE_SECONDS
+from user import login_user, register_user
+from mongo import init_connection
 
 
 def write_disclaimer() -> None:
@@ -48,57 +48,90 @@ def write_load_message(df_data: pd.DataFrame, df_dimensions: pd.DataFrame) -> No
     )
 
 
+def login_or_register() -> None:
+    st.markdown("## Who wants to access PFN?")
+    st.sidebar.write("Login or register:")
+    login_sidebar = st.sidebar.selectbox(
+        " ", ["Login", "Register"], label_visibility="collapsed"
+    )
+
+    if login_sidebar == "Register":
+        with st.form("register_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Register")
+        if submit:
+            if register_user(username, password):
+                st.success("Registration successful: you can now log in!", icon="✅")
+            else:
+                st.error("Sorry, username already taken")
+
+    elif login_sidebar == "Login":
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submit = st.form_submit_button("Login")
+        if submit:
+            if login_user(username, password):
+                st.session_state["user"] = username
+                st.rerun()
+            else:
+                st.error("Sorry, invalid credentials")
+    st.stop()
+
+
+@st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner="Fetching data from DB")
+def load_data(
+    username: str, is_mock: bool = False
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    client = init_connection()
+    db_name = "mock" if is_mock else "pfn"
+    db = client[db_name]
+
+    # --- TRANSACTIONS ---
+    query_t = {} if is_mock else {"user_id": username}
+    # Carichiamo anche il tipo transazione per decidere il segno
+    cursor_t = db["transactions"].find(query_t, {"_id": 0})
+    df_t = pd.DataFrame(list(cursor_t))
+
+    if not df_t.empty:
+        # 1. Rinominiamo per compatibilità con le vecchie analisi
+        df_t = df_t.rename(
+            columns={
+                "transaction_date": "transaction_date",  # Già corretto nel nuovo schema
+                "shares": "shares",  # Già corretto
+            }
+        )
+
+        # 2. TRUCCO DEL SEGNO: Se è 'Sell', moltiplichiamo shares per -1
+        # Questo "ripara" istantaneamente l'aggregazione in tutte le pagine
+        if "transaction_type" in df_t.columns:
+            df_t.loc[df_t["transaction_type"] == "Sell", "shares"] *= -1
+
+        # 3. Calcoli e conversioni
+        df_t["transaction_date"] = pd.to_datetime(df_t["transaction_date"])
+        df_t["shares"] = df_t["shares"].astype(float)
+        df_t["price"] = df_t["price"].astype(float)
+        df_t["fees"] = df_t.get("fees", 0.0).astype(float)
+        df_t["ap_amount"] = df_t["shares"] * df_t["price"]
+
+    # --- ASSETS --- (Logica invariata)
+    cursor_a = db["assets"].find({}, {"_id": 0})
+    df_a = pd.DataFrame(list(cursor_a))
+    if not df_a.empty:
+        df_a = df_a.rename(
+            columns={
+                "security_full_name": "name",
+                "security_name": "name",
+                "ticker_yf": "ticker_yf",
+            }
+        )
+
+    return df_t, df_a
+
+
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def load_data(full_path: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    df_storico = pd.read_excel(
-        full_path,
-        sheet_name="Transactions History",
-        dtype={
-            "Exchange": str,
-            "Ticker": str,
-            "Shares": int,
-            "Price (€)": float,
-            "Fees (€)": float,
-        },
-    ).rename(
-        columns={
-            "Exchange": "exchange",
-            "Ticker": "ticker",
-            "Transaction Date": "transaction_date",
-            "Shares": "shares",
-            "Price (€)": "price",
-            "Fees (€)": "fees",
-        }
-    )
-    df_storico["ap_amount"] = df_storico["shares"] * df_storico["price"]
-    df_storico["ticker_yf"] = df_storico["ticker"] + "." + df_storico["exchange"]
-
-    df_anagrafica = pd.read_excel(
-        full_path, sheet_name="Securities Master Table", dtype=str
-    ).rename(
-        columns={
-            "Exchange": "exchange",
-            "Ticker": "ticker",
-            "Security Name": "name",
-            "Asset Class": "asset_class",
-            "Macro Asset Class": "macro_asset_class",
-        }
-    )
-    df_anagrafica["ticker_yf"] = (
-        df_anagrafica["ticker"] + "." + df_anagrafica["exchange"]
-    )
-
-    # Drop columns not belonging to the excel tables
-    df_storico = df_storico.drop(
-        columns=[col_ for col_ in df_storico.columns if col_.startswith("Unnamed")]
-    )
-
-    write_load_message(df_data=df_storico, df_dimensions=df_anagrafica)
-    return df_storico, df_anagrafica
-
-
-@st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def get_last_closing_price(ticker_list: List[str]) -> pd.DataFrame:
+def get_last_closing_price(ticker_list: list[str]) -> pd.DataFrame:
     df_last_closing = pd.DataFrame(
         columns=["ticker_yf", "last_closing_date", "price"],
         index=range(len(ticker_list)),
@@ -133,7 +166,7 @@ def get_last_closing_price(ticker_list: List[str]) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def get_last_closing_price_from_api(ticker: str, days_of_delay: int = 5) -> List:
+def get_last_closing_price_from_api(ticker: str, days_of_delay: int = 5) -> list:
     today = datetime.utcnow()
     delayed = today - timedelta(days=days_of_delay)
 
@@ -155,7 +188,7 @@ def get_last_closing_price_from_api(ticker: str, days_of_delay: int = 5) -> List
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def get_full_price_history(ticker_list: List[str]) -> Dict:
+def get_full_price_history(ticker_list: list[str]) -> dict:
     df_history = dict()
 
     for ticker_ in ticker_list:
@@ -173,7 +206,7 @@ def get_full_price_history(ticker_list: List[str]) -> Dict:
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
-def get_max_common_history(ticker_list: List[str]) -> pd.DataFrame:
+def get_max_common_history(ticker_list: list[str]) -> pd.DataFrame:
     full_history = get_full_price_history(ticker_list)
     df_full_history = pd.concat(
         [full_history[t_] for t_ in ticker_list],
@@ -216,3 +249,27 @@ def get_risk_free_rate_history(decimal: bool = False) -> pd.DataFrame:
     if decimal:
         df_ecb["euro_str"] = df_ecb["euro_str"].div(100)
     return df_ecb
+
+
+def check_session_sidebar():
+    if "user" in st.session_state:
+        st.sidebar.write(
+            f"Logged in as: **{st.session_state['user']}**", unsafe_allow_html=True
+        )
+        if st.sidebar.button("Logout", use_container_width=True):
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.rerun()
+    else:
+        login_or_register()
+        st.stop()
+
+
+def ensure_data_is_loaded():
+    if "data" not in st.session_state:
+        user = st.session_state.get("user")
+        if user:
+            df_t, df_a = load_data(user, is_mock=False)
+            st.session_state["data"] = df_t
+            st.session_state["dimensions"] = df_a
+            st.session_state["is_mock"] = False

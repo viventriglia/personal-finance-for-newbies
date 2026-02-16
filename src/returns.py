@@ -18,7 +18,7 @@ def get_period_returns(
     # Filtra solo i ticker effettivamente in portafoglio
     df_registry = df_registry[df_registry["ticker_yf"].isin(tickers_to_evaluate)]
     # Calcolo il ritorno
-    df_rets = df.pct_change()[1:]
+    df_rets = df.ffill().pct_change()[1:]
     # Se il periodo è None, la frequenza è giornaliera
     if period is None:
         # Se il livello è quello del ticker, non devo fare altro
