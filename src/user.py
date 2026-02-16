@@ -47,22 +47,36 @@ def login_user(username: str, psw: str) -> bool:
 
 def get_user_transactions(user_id: str) -> pd.DataFrame:
     transactions = init_connection()["pfn"]["transactions"]
-    user_transactions = transactions.find({"user_id": user_id})
-    df = pd.DataFrame(list(user_transactions))
-
-    cols = ["ticker", "transaction_type", "quantity", "price", "date"]
+    user_transactions = list(transactions.find({"user_id": user_id}))
+    df = pd.DataFrame(user_transactions)
 
     if df.empty:
-        return pd.DataFrame(columns=cols)
-    if "asset" in df.columns:
-        df["ticker"] = df["asset"].apply(lambda x: x.get("ticker", ""))
-    if "date" in df.columns:
-        df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.strftime("%d-%m-%Y")
-    df.index += 1
+        return pd.DataFrame(
+            columns=[
+                "_id",
+                "ticker_yf",
+                "transaction_type",
+                "shares",
+                "price",
+                "transaction_date",
+                "fees",
+            ]
+        )
 
-    missing_cols = [col for col in cols if col not in df.columns]
-    if missing_cols:
-        for col in missing_cols:
-            df[col] = ""
+    df["_id"] = df["_id"].astype(str)
 
-    return df[cols]
+    if "transaction_type" in df.columns:
+        df.loc[df["transaction_type"] == "Sell", "shares"] *= -1
+
+    cols = [
+        "_id",
+        "ticker_yf",
+        "transaction_type",
+        "shares",
+        "price",
+        "transaction_date",
+        "fees",
+    ]
+    df["transaction_date"] = pd.to_datetime(df["transaction_date"]).dt.date
+
+    return df[cols].reset_index(drop=True)

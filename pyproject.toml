@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "personal-finance-for-newbies"
-version = "0.1.2"
+version = "1.0.0"
 description = ""
 authors = ["Vincenzo Ventriglia <vincenzo.ventriglia@outlook.com>"]
 readme = "README.md"
@@ -16,6 +16,7 @@ openpyxl = "^3.1.2"
 streamlit = "1.39.0"
 pymongo = "^4.11"
 bcrypt = "^4.2.1"
+pydantic = "^2.12.5"
 
 [tool.poetry.dev-dependencies]
 black = "^23.3.0"

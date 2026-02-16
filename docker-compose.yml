@@ -1,0 +1,16 @@
+services:
+  pfn_app:
+    build: .
+    container_name: pfn_streamlit
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - STREAMLIT_MONGO__URI=${STREAMLIT_MONGO__URI}
+    networks:
+      - pfn_network
+
+networks:
+  pfn_network:
+    driver: bridge

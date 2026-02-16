@@ -1,3 +1,7 @@
+.streamlit/secrets.toml
+.env
+__pycache__
+.git
 .venv/
 .vscode/
 jupyters/
