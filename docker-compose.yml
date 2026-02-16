@@ -1,14 +1,16 @@
 services:
-  streamlit:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - INSTALL_MODE=${INSTALL_MODE:-uv}
-    container_name: pfn
+  pfn_app:
+    build: .
+    container_name: pfn_streamlit
     ports:
-      - 8501:8501
-    volumes:
-      - ./src:/app/src
-      - ./data:/app/data
-    command: streamlit run ./src/0_🏠_Home.py --server.port=8501 --server.address=0.0.0.0
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - STREAMLIT_MONGO__URI=${STREAMLIT_MONGO__URI}
+    networks:
+      - pfn_network
+
+networks:
+  pfn_network:
+    driver: bridge

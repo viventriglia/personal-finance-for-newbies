@@ -62,8 +62,8 @@ def get_wealth_history(
 
     df_transactions = df_transactions[df_transactions["ticker_yf"].isin(ticker_list)]
 
-    df_asset_allocation = pd.DataFrame(index=date_range, columns=ticker_list, data=0)
-    df_cumulative_spent = pd.Series(index=date_range, data=0)
+    df_asset_allocation = pd.DataFrame(index=date_range, columns=ticker_list, data=0.0)
+    df_cumulative_spent = pd.Series(index=date_range, data=0.0)
 
     for (data, ticker), group in df_transactions.groupby(
         ["transaction_date", "ticker_yf"]
