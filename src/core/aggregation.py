@@ -5,8 +5,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-from var import CACHE_EXPIRE_SECONDS
-from input_output import get_full_price_history
+from utils.var import CACHE_EXPIRE_SECONDS
+from utils.market import get_full_price_history
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)

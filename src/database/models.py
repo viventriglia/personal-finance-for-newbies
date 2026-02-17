@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime, timezone
 from typing import Literal
 import re
+
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+
 
 TICKER_PATTERN = r"^[A-Z0-9]{3,}\.[A-Z]{1,3}$"
 

@@ -1,9 +1,8 @@
 from datetime import datetime
 
 import bcrypt
-import pandas as pd
 
-from mongo import init_connection
+from database.connection import init_connection
 
 
 def hash_psw(psw: str) -> str:
@@ -43,40 +42,3 @@ def login_user(username: str, psw: str) -> bool:
         return True
     else:
         return False
-
-
-def get_user_transactions(user_id: str) -> pd.DataFrame:
-    transactions = init_connection()["pfn"]["transactions"]
-    user_transactions = list(transactions.find({"user_id": user_id}))
-    df = pd.DataFrame(user_transactions)
-
-    if df.empty:
-        return pd.DataFrame(
-            columns=[
-                "_id",
-                "ticker_yf",
-                "transaction_type",
-                "shares",
-                "price",
-                "transaction_date",
-                "fees",
-            ]
-        )
-
-    df["_id"] = df["_id"].astype(str)
-
-    if "transaction_type" in df.columns:
-        df.loc[df["transaction_type"] == "Sell", "shares"] *= -1
-
-    cols = [
-        "_id",
-        "ticker_yf",
-        "transaction_type",
-        "shares",
-        "price",
-        "transaction_date",
-        "fees",
-    ]
-    df["transaction_date"] = pd.to_datetime(df["transaction_date"]).dt.date
-
-    return df[cols].reset_index(drop=True)

@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-from var import PLT_FONT_SIZE
+from utils.var import PLT_FONT_SIZE
 
 
 def plot_sunburst(df: pd.DataFrame) -> go.Figure:

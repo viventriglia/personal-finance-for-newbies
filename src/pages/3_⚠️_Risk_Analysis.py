@@ -1,15 +1,11 @@
 import streamlit as st
 
-from input_output import (
-    write_disclaimer,
-    check_session_sidebar,
-    ensure_data_is_loaded,
-    get_max_common_history,
-)
-from risk import get_drawdown, get_max_dd, get_portfolio_relative_risk_contribution
-from returns import get_period_returns
-from plot import plot_drawdown, plot_horizontal_bar
-from var import (
+from utils.market import get_max_common_history
+from utils.ui import write_disclaimer, check_session_sidebar, ensure_data_is_loaded
+from core.risk import get_drawdown, get_max_dd, get_portfolio_relative_risk_contribution
+from core.returns import get_period_returns
+from utils.plot import plot_drawdown, plot_horizontal_bar
+from utils.var import (
     GLOBAL_STREAMLIT_STYLE,
     PLT_CONFIG_NO_LOGO,
     FAVICON,

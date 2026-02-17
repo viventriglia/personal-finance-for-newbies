@@ -1,21 +1,16 @@
-from pathlib import Path, PurePath
+from pathlib import Path
 from PIL import Image
 from random import randint
-import os
 
-script_running_path = str(Path(__file__).parent.resolve())
-split_script_running_path = path_split = PurePath(script_running_path).parts
-assets_path = str(
-    os.path.join(*split_script_running_path[0 : len(split_script_running_path) - 1])
-)
-
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.1.0"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Data/images
 
-DATA_PATH = Path(assets_path, "data", "in")
-FAVICON = Image.open(Path(assets_path, "images", "piggybank.ico"))
-COVER = Image.open(Path(assets_path, "images", f"cover_{randint(1,6)}.jpeg"))
+DATA_PATH = BASE_DIR / "data" / "in"
+IMAGES_PATH = BASE_DIR / "images"
+FAVICON = Image.open(IMAGES_PATH / "piggybank.ico")
+COVER = Image.open(IMAGES_PATH / f"cover_{randint(1,6)}.jpeg")
 
 # Streamlit/Plotly vars
 

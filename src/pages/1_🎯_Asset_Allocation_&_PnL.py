@@ -2,26 +2,24 @@ from datetime import datetime
 
 import streamlit as st
 
-from var import (
+from utils.var import (
     GLOBAL_STREAMLIT_STYLE,
     PLT_CONFIG,
     PLT_CONFIG_NO_LOGO,
     FAVICON,
     DICT_GROUPBY_LEVELS,
 )
-from input_output import (
-    write_disclaimer,
-    check_session_sidebar,
-    get_last_closing_price,
-    ensure_data_is_loaded,
-)
-from aggregation import (
+from utils.ui import write_disclaimer, check_session_sidebar
+from core.aggregation import (
     aggregate_by_ticker,
     get_pnl_by_asset_class,
     get_portfolio_pivot,
     get_wealth_history,
 )
-from plot import plot_sunburst, plot_wealth, plot_pnl_by_asset_class
+from utils.plot import plot_sunburst, plot_wealth, plot_pnl_by_asset_class
+from utils.ui import ensure_data_is_loaded
+from utils.market import get_last_closing_price
+
 
 st.set_page_config(
     page_title="PFN | Asset Allocation & PnL",
