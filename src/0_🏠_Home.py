@@ -1,7 +1,8 @@
 import streamlit as st
 
-from input_output import load_data, write_disclaimer, check_session_sidebar
-from var import (
+from utils.ui import write_disclaimer, check_session_sidebar
+from database.fetch import load_data
+from utils.var import (
     GLOBAL_STREAMLIT_STYLE,
     FAVICON,
     APP_VERSION,

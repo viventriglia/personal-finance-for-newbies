@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-from var import CACHE_EXPIRE_SECONDS
+from utils.var import CACHE_EXPIRE_SECONDS
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
