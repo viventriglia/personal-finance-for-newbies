@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "personal-finance-for-newbies"
-version = "1.0.0"
+version = "1.0.1"
 description = ""
 authors = ["Vincenzo Ventriglia <vincenzo.ventriglia@outlook.com>"]
 readme = "README.md"
