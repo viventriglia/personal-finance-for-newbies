@@ -48,14 +48,33 @@ st.markdown(
 
 with st.form("transaction_form", clear_on_submit=True):
     col_l, col_m, col_r = st.columns([1, 0.2, 0.6])
-    ticker_yf = col_l.text_input("Ticker YF (e.g., AAPL.US)").upper().strip()
+    ticker_yf = (
+        col_l.text_input(
+            "Ticker",
+            placeholder="e.g. AAPL or MWRD.MI",
+            help="""
+        **Ticker**: Symbol to identify a security
+        **Exchange**: For non-US markets, add the suffix (e.g. .MI, .DE)  
+        [Check Yahoo Finance suffixes here](https://help.yahoo.com/kb/SLN2310.html)
+        """,
+        )
+        .upper()
+        .strip()
+    )
     transaction_type = col_r.radio("Type", ["Buy", "Sell"], horizontal=True)
 
     col1, col2, col3, col4 = st.columns(4)
     shares = col1.number_input("Shares", min_value=1, step=1)
-    price = col2.number_input("Price (€)", min_value=0.0, format="%.2f")
-    fees = col3.number_input("Fees (€)", min_value=0.0, format="%.2f")
-    date = col4.date_input("Date", datetime.today().date())
+    price = col2.number_input(
+        "Price (€)",
+        min_value=0.0,
+        format="%.2f",
+        help="Price per share at the moment of the transaction",
+    )
+    fees = col3.number_input(
+        "Fees (€)", min_value=0.0, format="%.2f", help="Total transaction fees, if any"
+    )
+    date = col4.date_input("Transaction Date", datetime.today().date())
 
     submitted = st.form_submit_button("Save Transaction", icon="💾")
 
