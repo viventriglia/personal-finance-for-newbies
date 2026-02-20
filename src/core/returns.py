@@ -130,19 +130,16 @@ def get_period_returns(
     df: pd.DataFrame,
     df_registry: pd.DataFrame,
     tickers_to_evaluate: list[str],
-    period: Literal["Y", "Q", "M", "W", None],
+    period: Literal["YE", "QE", "ME", "W", None],
     level: Literal["ticker", "asset_class", "macro_asset_class"],
 ):
     # Filtra solo i ticker effettivamente in portafoglio
     df_registry = df_registry[df_registry["ticker_yf"].isin(tickers_to_evaluate)]
-    # Calcolo il ritorno
     df_rets = df.ffill().pct_change()[1:]
     # Se il periodo è None, la frequenza è giornaliera
     if period is None:
-        # Se il livello è quello del ticker, non devo fare altro
         if level == "ticker":
             return df_rets
-        # Altrimenti sommo al livello delle asset class
         else:
             classes = df_registry[level].unique()
             df_rets_classes = pd.DataFrame(columns=classes)
