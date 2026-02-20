@@ -34,14 +34,21 @@ st.markdown(GLOBAL_STREAMLIT_STYLE, unsafe_allow_html=True)
 check_session_sidebar()
 ensure_data_is_loaded()
 
-if "data" in st.session_state:
-    df_storico = st.session_state["data"]
-    df_anagrafica = st.session_state["dimensions"]
-else:
-    st.error("Oops... there's nothing to display. Go through 🏠 first to load the data")
+df_transactions = st.session_state["data"]
+df_registry = st.session_state["dimensions"]
+
+if df_transactions.empty:
+    st.warning(
+        "⚠️ Your portfolio is empty! To see these analytics, you first need to add some investments."
+    )
+    st.page_link(
+        "pages/4_📝_Transactions_&_Assets.py",
+        label="Add your first transaction",
+        icon="✍🏻",
+    )
     st.stop()
 
-df_pf = aggregate_by_ticker(df_storico, in_pf_only=True)
+df_pf = aggregate_by_ticker(df_transactions, in_pf_only=True)
 
 ticker_list = df_pf["ticker_yf"].to_list()
 df_last_closing = get_last_closing_price(ticker_list=ticker_list)
@@ -51,7 +58,7 @@ df_j = df_pf[["ticker_yf", "dca", "shares"]].merge(
 )
 
 expense = (df_j["shares"] * df_j["dca"]).sum()
-fees = df_storico["fees"].sum().round(2)
+fees = df_transactions["fees"].sum().round(2)
 
 st.markdown("## Profit & Loss")
 
@@ -83,7 +90,7 @@ col_2.metric(
     """,
 )
 
-first_transaction = df_storico["transaction_date"].sort_values()[0]
+first_transaction = df_transactions["transaction_date"].sort_values()[0]
 n_years = (datetime.now() - first_transaction).days / 365.25
 annualised_ret = ((pf_actual_value / total_expense) ** (1 / n_years)) - 1
 
@@ -101,11 +108,11 @@ col_3.metric(
 )
 
 df_wealth_early = get_wealth_history(
-    df_transactions=df_storico, ticker_list=ticker_list
+    df_transactions=df_transactions, ticker_list=ticker_list
 )
 
 xirr_value = xirr(
-    df_transactions=df_storico,
+    df_transactions=df_transactions,
     pf_current_value=pf_actual_value,
     consider_fees=consider_fees,
 )
@@ -139,7 +146,7 @@ col_5.metric(
 
 df_pivot = get_portfolio_pivot(
     df=df_j,
-    df_dimensions=df_anagrafica,
+    df_dimensions=df_registry,
     pf_actual_value=pf_actual_value,
     aggregation_level="ticker",
 )
@@ -159,7 +166,7 @@ with st.expander("Show me a table"):
     )
     df_pivot_ = get_portfolio_pivot(
         df=df_j,
-        df_dimensions=df_anagrafica,
+        df_dimensions=df_registry,
         pf_actual_value=pf_actual_value,
         aggregation_level=DICT_GROUPBY_LEVELS[group_by],
     )
@@ -199,7 +206,7 @@ dict_group_by = {
 }
 
 df_pnl_by_asset_class = get_pnl_by_asset_class(
-    df=df_j, df_dimensions=df_anagrafica, group_by=dict_group_by[group_by]
+    df=df_j, df_dimensions=df_registry, group_by=dict_group_by[group_by]
 )
 
 fig = plot_pnl_by_asset_class(
@@ -211,7 +218,7 @@ st.markdown("***")
 
 st.markdown("## Wealth history")
 
-df_wealth = get_wealth_history(df_transactions=df_storico, ticker_list=ticker_list)
+df_wealth = get_wealth_history(df_transactions=df_transactions, ticker_list=ticker_list)
 
 fig = plot_wealth(df=df_wealth)
 st.plotly_chart(fig, use_container_width=True, config=PLT_CONFIG)

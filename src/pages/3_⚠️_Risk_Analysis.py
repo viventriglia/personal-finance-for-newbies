@@ -26,11 +26,18 @@ st.markdown(GLOBAL_STREAMLIT_STYLE, unsafe_allow_html=True)
 check_session_sidebar()
 ensure_data_is_loaded()
 
-if "data" in st.session_state:
-    df_transactions = st.session_state["data"]
-    df_registry = st.session_state["dimensions"]
-else:
-    st.error("Oops... there's nothing to display. Go through 🏠 first to load the data")
+df_transactions = st.session_state["data"]
+df_registry = st.session_state["dimensions"]
+
+if df_transactions.empty:
+    st.warning(
+        "⚠️ Your portfolio is empty! To see these analytics, you first need to add some investments."
+    )
+    st.page_link(
+        "pages/4_📝_Transactions_&_Assets.py",
+        label="Add your first transaction",
+        icon="✍🏻",
+    )
     st.stop()
 
 df_n_shares = (
