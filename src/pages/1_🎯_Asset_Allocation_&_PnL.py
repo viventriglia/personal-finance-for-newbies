@@ -16,6 +16,7 @@ from core.aggregation import (
     get_portfolio_pivot,
     get_wealth_history,
 )
+from core.returns import xirr, twr
 from utils.plot import plot_sunburst, plot_wealth, plot_pnl_by_asset_class
 from utils.ui import ensure_data_is_loaded
 from utils.market import get_last_closing_price
@@ -54,7 +55,7 @@ fees = df_storico["fees"].sum().round(2)
 
 st.markdown("## Profit & Loss")
 
-col_l, col_m, col_r = st.columns([1, 1, 1], gap="small")
+col_1, col_2, col_3, col_4, col_5 = st.columns([1.2, 1, 1, 1, 1], gap="small")
 
 consider_fees = st.checkbox("Take fees into account")
 
@@ -65,18 +66,20 @@ pnl = pf_actual_value - total_expense
 pnl_perc = pnl / total_expense
 sign = "+" if pnl >= 0 else ""
 
-col_l.metric(
-    label="Actual portfolio value",
+col_1.metric(
+    label="Portfolio Value",
     value=f"{pf_actual_value: ,.1f} €",
     delta=f"{sign}{pnl: ,.1f} €",
 )
 
-col_m.metric(
-    label="Return On Investment (ROI)",
+col_2.metric(
+    label="ROI",
     value=f"{sign}{pnl_perc: .1%}",
     help="""
-    ROI shows the total gain or loss as a percentage of the original amount
-    invested, regardless of how long the investment was held
+    **Return on Investment**: total gain or loss as a percentage of the
+    invested capital, regardless of the time elapsed.
+    Suitable for both lump-sum and regular-contribution investors,
+    but gives no information about *when* returns were generated.
     """,
 )
 
@@ -84,12 +87,53 @@ first_transaction = df_storico["transaction_date"].sort_values()[0]
 n_years = (datetime.now() - first_transaction).days / 365.25
 annualised_ret = ((pf_actual_value / total_expense) ** (1 / n_years)) - 1
 
-col_r.metric(
-    label="Annualised return",
+col_3.metric(
+    label="CAGR",
     value=f"{sign}{annualised_ret: .1%}",
     help="""
-    This measures the average yearly return, helping compare investments
-    held for different periods by standardising the return on an annual basis
+    **Compound Annual Growth Rate**: the rate at which the portfolio would
+    have grown each year if it had grown at a steady pace.
+    Best suited for lump-sum investments, where a single initial
+    amount is invested. For regular contributions, CAGR can be
+    misleading because it assumes all capital was deployed on day one —
+    prefer XIRR in that case.
+    """,
+)
+
+df_wealth_early = get_wealth_history(
+    df_transactions=df_storico, ticker_list=ticker_list
+)
+
+xirr_value = xirr(
+    df_transactions=df_storico,
+    pf_current_value=pf_actual_value,
+    consider_fees=consider_fees,
+)
+twr_value = twr(df_wealth_early)
+
+
+sign_x = "+" if xirr_value >= 0 else ""
+col_4.metric(
+    label="XIRR",
+    value=f"{sign_x}{xirr_value:.1%}",
+    help="""
+    **Extended Internal Rate of Return**: the annualised rate that makes the
+    net present value of all cash flows (investments in, portfolio value out)
+    equal to zero.
+    Best suited for regular-contribution portfolios, where capital
+    is added at different points in time — XIRR accounts for the exact timing
+    of each investment, unlike CAGR.
+    """,
+)
+
+sign_t = "+" if twr_value >= 0 else ""
+col_5.metric(
+    label="TWR",
+    value=f"{sign_t}{twr_value:.1%}",
+    help="""
+    **Time-Weighted Return**: links the (annualised) holding-period returns between each
+    cash-flow event, eliminating the effect of the size and timing of deposits.
+    This makes it directly comparable to benchmark indices, regardless of how you invest.
     """,
 )
 

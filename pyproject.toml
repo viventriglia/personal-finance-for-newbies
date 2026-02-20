@@ -16,6 +16,7 @@ streamlit = "1.39.0"
 pymongo = "^4.11"
 bcrypt = "^4.2.1"
 pydantic = "^2.12.5"
+scipy = "^1.10"
 
 [tool.poetry.dev-dependencies]
 black = "^23.3.0"
