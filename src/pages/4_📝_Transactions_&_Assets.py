@@ -25,7 +25,6 @@ ensure_data_is_loaded()
 user_id = st.session_state["user"]
 db = init_connection()["pfn"]
 
-# Notifica persistente dopo rerun
 if st.session_state.get("sync_success"):
     st.toast("Database synced!", icon="✅")
     del st.session_state["sync_success"]
@@ -74,7 +73,9 @@ with st.form("transaction_form", clear_on_submit=True):
     fees = col3.number_input(
         "Fees (€)", min_value=0.0, format="%.2f", help="Total transaction fees, if any"
     )
-    date = col4.date_input("Transaction Date", datetime.today().date())
+    date = col4.date_input(
+        "Transaction Date", datetime.today().date(), format="DD/MM/YYYY"
+    )
 
     submitted = st.form_submit_button("Save Transaction", icon="💾")
 
