@@ -1,5 +1,4 @@
 from pathlib import Path
-from PIL import Image
 from random import randint
 
 APP_VERSION = "1.1.0"
@@ -9,8 +8,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 DATA_PATH = BASE_DIR / "data" / "in"
 IMAGES_PATH = BASE_DIR / "images"
-FAVICON = Image.open(IMAGES_PATH / "piggybank.ico")
-COVER = Image.open(IMAGES_PATH / f"cover_{randint(1,6)}.jpeg")
+FAVICON = IMAGES_PATH / "piggybank.ico"
+COVER = IMAGES_PATH / f"cover_{randint(1,6)}.jpeg"
 
 # Streamlit/Plotly vars
 
@@ -60,9 +59,9 @@ DICT_GROUPBY_LEVELS = {
     "Tickers": "ticker",
 }
 DICT_FREQ_RESAMPLE = {
-    "Year": "Y",
-    "Quarter": "Q",
-    "Month": "M",
+    "Year": "YE",
+    "Quarter": "QE",
+    "Month": "ME",
     "Week": "W",
     "Day": None,
 }

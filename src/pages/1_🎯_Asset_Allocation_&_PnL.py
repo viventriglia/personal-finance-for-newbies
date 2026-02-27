@@ -24,7 +24,7 @@ from utils.market import get_last_closing_price
 
 st.set_page_config(
     page_title="PFN | Asset Allocation & PnL",
-    page_icon=FAVICON,
+    page_icon=str(FAVICON),
     layout="wide",
     initial_sidebar_state="auto",
 )

@@ -15,7 +15,7 @@ from utils.var import (
 
 st.set_page_config(
     page_title="PFN | Return Analysis",
-    page_icon=FAVICON,
+    page_icon=str(FAVICON),
     layout="wide",
     initial_sidebar_state="auto",
 )

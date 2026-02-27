@@ -12,7 +12,7 @@ from utils.var import (
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(
     page_title="PFN | Home",
-    page_icon=FAVICON,
+    page_icon=str(FAVICON),
     layout="wide",
     initial_sidebar_state="auto",
 )
@@ -58,7 +58,7 @@ with col_r:
         unsafe_allow_html=True,
     )
 
-col_l.image(COVER)
+col_l.image(str(COVER))
 
 st.markdown("***")
 

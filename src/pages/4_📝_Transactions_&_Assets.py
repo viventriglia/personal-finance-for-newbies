@@ -12,7 +12,7 @@ from utils.ui import check_session_sidebar, ensure_data_is_loaded, load_data
 
 st.set_page_config(
     page_title="PFN | Manage Transactions",
-    page_icon=FAVICON,
+    page_icon=str(FAVICON),
     layout="wide",
     initial_sidebar_state="auto",
 )
