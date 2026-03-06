@@ -43,3 +43,10 @@ class TransactionModel(BaseModel):
         if not re.match(TICKER_PATTERN, v):
             raise ValueError("Ticker format invalid (e.g. VWCE.MI)")
         return v
+
+
+class TargetWeightModel(BaseModel):
+    user_id: str
+    level: Literal["Macro Asset Classes", "Asset Classes", "Tickers"]
+    targets: dict[str, float]
+    updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

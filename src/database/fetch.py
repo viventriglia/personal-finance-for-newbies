@@ -3,6 +3,7 @@ import pandas as pd
 
 from utils.var import CACHE_EXPIRE_SECONDS
 from database.connection import init_connection
+from database.models import TargetWeightModel
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner="Fetching data from DB")
@@ -98,3 +99,23 @@ def get_user_transactions(user_id: str) -> pd.DataFrame:
     df["transaction_date"] = pd.to_datetime(df["transaction_date"]).dt.date
 
     return df[cols].reset_index(drop=True)
+
+
+def get_user_target_weights(user_id: str, level: str) -> dict | None:
+    client = init_connection()
+    db = client["pfn"]
+    doc = db["target_weights"].find_one({"user_id": user_id, "level": level})
+    if doc:
+        return doc.get("targets")
+    return None
+
+
+def save_user_target_weights(user_id: str, level: str, targets: dict) -> None:
+    client = init_connection()
+    db = client["pfn"]
+
+    model = TargetWeightModel(user_id=user_id, level=level, targets=targets)
+
+    db["target_weights"].update_one(
+        {"user_id": user_id, "level": level}, {"$set": model.model_dump()}, upsert=True
+    )

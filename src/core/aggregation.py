@@ -132,3 +132,41 @@ def get_pnl_by_asset_class(
     df_pnl["pnl"] = ((df_pnl["price"] - df_pnl["dca"]) * df_pnl["shares"]).astype(float)
     df_pnl = df_pnl.groupby(group_by)["pnl"].sum().reset_index().sort_values([group_by])
     return df_pnl
+
+
+def format_actions(
+    df: pd.DataFrame, is_ticker: bool, level_col: str, level_ui: str
+) -> pd.DataFrame:
+    df["Action"] = np.where(
+        df["delta_value"] > 0,
+        "BUY 🟢",
+        np.where(df["delta_value"] < 0, "SELL 🔴", "HOLD ⚪"),
+    )
+
+    df["weight_diff"] = (df["target_weight"] * 100) - df["current_weight"]
+
+    cols_to_show = [
+        level_col,
+        "Action",
+        "delta_value",
+        "weight_diff",
+    ]
+
+    if is_ticker:
+        cols_to_show.insert(1, "asset_class")
+        df["delta_shares"] = df["delta_value"] / df["price"]
+        cols_to_show.append("delta_shares")
+
+    res_df = df[cols_to_show].copy()
+    res_df.insert(0, "Execute", True)
+
+    rename_dict = {
+        level_col: level_ui,
+        "asset_class": "Asset Class",
+        "delta_value": "Amount to Trade (€)",
+        "weight_diff": "Difference in Weight (%)",
+        "delta_shares": "Shares to Trade (Approx.)",
+    }
+    return res_df.rename(columns=rename_dict).sort_values(
+        "Amount to Trade (€)", ascending=False
+    )
