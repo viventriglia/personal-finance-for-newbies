@@ -194,3 +194,28 @@ def get_rolling_returns(
 
             df_roll_ret_classes[class_] = df_roll_ret[cols_to_sum].sum(axis=1)
         return df_roll_ret_classes
+
+
+@st.cache_data(ttl=10 * CACHE_EXPIRE_SECONDS, show_spinner=False)
+def get_portfolio_return_series(
+    df_wealth: pd.DataFrame, period: Literal["YE", "QE", "ME", "W", None] = None
+) -> pd.Series:
+    """Restituisce la serie storica dei rendimenti del portafoglio aggregato."""
+    df = df_wealth[["ap_daily_value", "ap_cum_spent"]].copy().dropna()
+    df["cf"] = df["ap_cum_spent"].diff().fillna(0.0)
+
+    if "is_pricing_day" in df_wealth.columns:
+        pricing_days = df_wealth["is_pricing_day"].reindex(df.index).fillna(False)
+        df = df[pricing_days | df["cf"].ne(0)]
+
+    v_start = df["ap_daily_value"].shift(1)
+    denominator = v_start + df["cf"]
+
+    # Holding Period Return between observed pricing dates and cash flows.
+    hpr = (df["ap_daily_value"] - v_start - df["cf"]) / denominator.replace(0, np.nan)
+    hpr = hpr.fillna(0.0)
+
+    if period is None:
+        return hpr
+    else:
+        return hpr.resample(period).agg(lambda x: (x + 1).prod() - 1)

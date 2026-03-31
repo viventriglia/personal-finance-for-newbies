@@ -1,9 +1,17 @@
 import streamlit as st
 
-from utils.market import get_max_common_history
+from utils.market import get_max_common_history, get_risk_free_rate_last_value
 from utils.ui import write_disclaimer, check_session_sidebar, ensure_data_is_loaded
-from core.risk import get_drawdown, get_max_dd, get_portfolio_relative_risk_contribution
-from core.returns import get_period_returns
+from core.risk import (
+    get_drawdown,
+    get_max_dd,
+    get_portfolio_relative_risk_contribution,
+    sharpe_ratio,
+    sortino_ratio,
+    calmar_ratio,
+)
+from core.returns import get_period_returns, get_portfolio_return_series
+from core.aggregation import get_wealth_history
 from utils.plot import plot_drawdown, plot_horizontal_bar
 from utils.var import (
     GLOBAL_STREAMLIT_STYLE,
@@ -81,6 +89,57 @@ first_day, last_day = col_c_mid.select_slider(
     ],
     format_func=lambda value: str(value)[:10],
     label_visibility="collapsed",
+)
+
+st.markdown("***")
+
+st.markdown("## Portfolio Risk-Adjusted Performance")
+
+# 1. Impostazione del Risk Free Rate Dinamico
+default_rf = get_risk_free_rate_last_value(decimal=False)
+
+col_rf, col_info = st.columns([1, 2])
+rf_input_pct = col_rf.number_input(
+    "Risk-Free Rate (%)",
+    value=default_rf,
+    step=0.1,
+    help="By default, this is the current ECB short-term rate (€STR). Change this to match the yield of a safe bond with a duration matching your investment horizon (e.g. 10Y Bund).",
+)
+rf_decimal = rf_input_pct / 100
+
+MULTIPLIERS = {"Day": 252, "Week": 52, "Month": 12}
+periods_per_yr = MULTIPLIERS[freq]
+
+# 2. Ottenimento dei rendimenti del portafoglio aggregato
+df_wealth = get_wealth_history(df_transactions, ticker_list)
+pf_returns_full = get_portfolio_return_series(
+    df_wealth, period=DICT_FREQ_RESAMPLE[freq]
+)
+
+# Tagliamo la serie in base allo slider temporale dell'utente
+pf_returns_sliced = pf_returns_full.loc[first_day:last_day]
+
+# 3. Calcolo Metriche
+sharpe = sharpe_ratio(pf_returns_sliced, periods_per_yr, rf_decimal)
+sortino = sortino_ratio(pf_returns_sliced, periods_per_yr, rf_decimal)
+calmar = calmar_ratio(pf_returns_sliced, periods_per_yr)
+
+# 4. Visualizzazione
+col_s, col_so, col_c = st.columns(3)
+col_s.metric(
+    "Sharpe Ratio",
+    f"{sharpe:.2f}",
+    help="Measures excess return per unit of total risk (volatility).",
+)
+col_so.metric(
+    "Sortino Ratio",
+    f"{sortino:.2f}",
+    help="Measures excess return per unit of downside risk (only negative volatility).",
+)
+col_c.metric(
+    "Calmar Ratio",
+    f"{calmar:.2f}",
+    help="Ratio of annualised return to maximum drawdown.",
 )
 
 st.markdown("***")
@@ -196,19 +255,3 @@ fig = plot_horizontal_bar(
 st.plotly_chart(fig, use_container_width=True, config=PLT_CONFIG_NO_LOGO)
 
 write_disclaimer()
-
-# returns = np.log(weighted_average.div(weighted_average.shift(1))).fillna(0)
-
-# first_ap_day = str(df_storico["transaction_date"].min())[:10]
-
-# sr = sharpe_ratio(
-#     returns=returns,
-#     trading_days=df_common_history.shape[0],
-#     risk_free_rate=get_risk_free_rate_history(decimal=True)
-#     .sort_index()
-#     .loc[first_ap_day:]
-#     .median()
-#     .values[0],
-# )
-
-# st.write(sr)

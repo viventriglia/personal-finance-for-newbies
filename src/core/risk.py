@@ -7,25 +7,41 @@ import numpy as np
 from utils.var import CACHE_EXPIRE_SECONDS, TRADING_DAYS_YEAR
 
 
-@st.cache_data(ttl=10 * CACHE_EXPIRE_SECONDS, show_spinner=False)
+@st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
 def sharpe_ratio(
-    returns: pd.Series, trading_days: int, risk_free_rate: float = 3
+    returns: pd.Series, trading_days: int = 252, risk_free_rate: float = 1.0
 ) -> float:
-    mean = returns.mean() * trading_days - risk_free_rate
+    annualised_ret = returns.mean() * trading_days
     std = returns.std() * np.sqrt(trading_days)
-    return mean / std
+    if std == 0:
+        return np.nan
+    return (annualised_ret - risk_free_rate) / std
 
 
-# def sortino_ratio(series, N, rf):
-#     mean = series.mean() * N -rf
-#     std_neg = series[series<0].std()*np.sqrt(N)
-#     return mean/std_neg
+@st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
+def sortino_ratio(
+    returns: pd.Series, trading_days: int = 252, risk_free_rate: float = 1.0
+):
+    annualised_ret = returns.mean() * trading_days
+    negative_returns = returns[returns < 0]
+    if len(negative_returns) < 2:
+        return np.nan
+    downside_std = negative_returns.std() * np.sqrt(trading_days)
+    if downside_std == 0:
+        return np.nan
+    return (annualised_ret - risk_free_rate) / downside_std
 
-# def max_drawdown(return_series):
-#     comp_ret = (return_series+1).cumprod()
-#     peak = comp_ret.expanding(min_periods=1).max()
-#     dd = (comp_ret/peak)-1
-#     return dd.min()
+
+@st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
+def calmar_ratio(
+    returns: pd.Series,
+    trading_days: int = 252,
+) -> float:
+    annualised_ret = returns.mean() * trading_days
+    max_dd = get_max_dd(returns)
+    if max_dd == 0:
+        return np.nan
+    return (annualised_ret) / abs(max_dd)
 
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)

@@ -57,8 +57,10 @@ def get_wealth_history(
             axis=1,
         )
         .loc[begin_date:]
-        .bfill()
     )
+    df_prices = df_prices.reindex(date_range)
+    has_price_observation = df_prices.notna().any(axis=1)
+    df_prices = df_prices.bfill()
 
     df_transactions = df_transactions[df_transactions["ticker_yf"].isin(ticker_list)]
 
@@ -85,6 +87,7 @@ def get_wealth_history(
     df_wealth["diff_previous_day"] = df_wealth["ap_daily_value"].diff()
     df_wealth["ap_cum_spent"] = df_cumulative_spent
     df_wealth["ap_cum_pnl"] = df_wealth["ap_daily_value"] - df_wealth["ap_cum_spent"]
+    df_wealth["is_pricing_day"] = has_price_observation
 
     return df_wealth
 
@@ -162,11 +165,12 @@ def format_actions(
 
     rename_dict = {
         level_col: level_ui,
-        "asset_class": "Asset Class",
         "delta_value": "Amount to Trade (€)",
         "weight_diff": "Difference in Weight (%)",
         "delta_shares": "Shares to Trade (Approx.)",
     }
+    if is_ticker:
+        rename_dict["asset_class"] = "Asset Class"
     return res_df.rename(columns=rename_dict).sort_values(
         "Amount to Trade (€)", ascending=False
     )
