@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import streamlit as st
 import yfinance as yf
@@ -14,8 +14,9 @@ def get_last_closing_price(ticker_list: list[str]) -> pd.DataFrame:
         index=range(len(ticker_list)),
     )
     for i, ticker_ in zip(range(len(ticker_list)), ticker_list):
-        ticker_data = yf.Ticker(ticker_)
+        closing_date_ = None
         try:
+            ticker_data = yf.Ticker(ticker_)
             closing_date_ = (
                 ticker_data.history(
                     period="1d",
@@ -24,12 +25,14 @@ def get_last_closing_price(ticker_list: list[str]) -> pd.DataFrame:
                 .reset_index()
                 .values.tolist()
             )
+            if not closing_date_:
+                raise ValueError(f"Empty history for {ticker_}")
             df_last_closing.iloc[i] = [ticker_] + closing_date_[0]
-        except:
+        except Exception:
             try:
                 closing_date_ = get_last_closing_price_from_api(ticker=ticker_)
                 df_last_closing.iloc[i] = [ticker_] + closing_date_[0]
-            except:
+            except Exception:
                 st.error(
                     f"{ticker_}: latest data not available. Please check your internet connection or try again later",
                     icon="😔",
@@ -44,11 +47,11 @@ def get_last_closing_price(ticker_list: list[str]) -> pd.DataFrame:
 
 @st.cache_data(ttl=CACHE_EXPIRE_SECONDS, show_spinner=False)
 def get_last_closing_price_from_api(ticker: str, days_of_delay: int = 5) -> list:
-    today = datetime.utcnow()
+    today = datetime.now(timezone.utc)
     delayed = today - timedelta(days=days_of_delay)
 
     period1 = int(delayed.timestamp())
-    period2 = int(datetime.utcnow().timestamp())
+    period2 = int(today.timestamp())
 
     link = f"https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1={period1}&period2={period2}&interval=1d&events=history&includeAdjustedClose=true"
 
@@ -58,7 +61,7 @@ def get_last_closing_price_from_api(ticker: str, days_of_delay: int = 5) -> list
         )
         closing_date["Date"] = pd.to_datetime(closing_date["Date"])
         closing_date = closing_date.head(1).values.tolist()
-    except:
+    except Exception:
         closing_date = None
 
     return closing_date
@@ -99,9 +102,9 @@ def get_risk_free_rate_last_value(decimal: bool = False) -> float:
         df_ecb = pd.read_html(
             io="http://www.ecb.europa.eu/stats/financial_markets_and_interest_rates/euro_short-term_rate/html/index.en.html"
         )[0]
-        risk_free_rate = df_ecb.iloc[0, 1].astype(float)
-    except:
-        risk_free_rate = 3
+        risk_free_rate = float(df_ecb.iloc[0, 1])
+    except Exception:
+        risk_free_rate = 2
     if decimal:
         risk_free_rate = risk_free_rate / 100
     return risk_free_rate
@@ -121,7 +124,7 @@ def get_risk_free_rate_history(decimal: bool = False) -> pd.DataFrame:
             .drop(columns="obs. status")
             .rename(columns={"Unnamed: 1": "euro_str"})
         ).sort_index()
-    except:
+    except Exception:
         df_ecb = pd.DataFrame()
     if decimal:
         df_ecb["euro_str"] = df_ecb["euro_str"].div(100)

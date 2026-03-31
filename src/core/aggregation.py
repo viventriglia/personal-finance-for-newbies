@@ -57,8 +57,10 @@ def get_wealth_history(
             axis=1,
         )
         .loc[begin_date:]
-        .bfill()
     )
+    df_prices = df_prices.reindex(date_range)
+    has_price_observation = df_prices.notna().any(axis=1)
+    df_prices = df_prices.bfill()
 
     df_transactions = df_transactions[df_transactions["ticker_yf"].isin(ticker_list)]
 
@@ -85,6 +87,7 @@ def get_wealth_history(
     df_wealth["diff_previous_day"] = df_wealth["ap_daily_value"].diff()
     df_wealth["ap_cum_spent"] = df_cumulative_spent
     df_wealth["ap_cum_pnl"] = df_wealth["ap_daily_value"] - df_wealth["ap_cum_spent"]
+    df_wealth["is_pricing_day"] = has_price_observation
 
     return df_wealth
 
@@ -132,3 +135,42 @@ def get_pnl_by_asset_class(
     df_pnl["pnl"] = ((df_pnl["price"] - df_pnl["dca"]) * df_pnl["shares"]).astype(float)
     df_pnl = df_pnl.groupby(group_by)["pnl"].sum().reset_index().sort_values([group_by])
     return df_pnl
+
+
+def format_actions(
+    df: pd.DataFrame, is_ticker: bool, level_col: str, level_ui: str
+) -> pd.DataFrame:
+    df["Action"] = np.where(
+        df["delta_value"] > 0,
+        "BUY 🟢",
+        np.where(df["delta_value"] < 0, "SELL 🔴", "HOLD ⚪"),
+    )
+
+    df["weight_diff"] = (df["target_weight"] * 100) - df["current_weight"]
+
+    cols_to_show = [
+        level_col,
+        "Action",
+        "delta_value",
+        "weight_diff",
+    ]
+
+    if is_ticker:
+        cols_to_show.insert(1, "asset_class")
+        df["delta_shares"] = df["delta_value"] / df["price"]
+        cols_to_show.append("delta_shares")
+
+    res_df = df[cols_to_show].copy()
+    res_df.insert(0, "Execute", True)
+
+    rename_dict = {
+        level_col: level_ui,
+        "delta_value": "Amount to Trade (€)",
+        "weight_diff": "Difference in Weight (%)",
+        "delta_shares": "Shares to Trade (Approx.)",
+    }
+    if is_ticker:
+        rename_dict["asset_class"] = "Asset Class"
+    return res_df.rename(columns=rename_dict).sort_values(
+        "Amount to Trade (€)", ascending=False
+    )
