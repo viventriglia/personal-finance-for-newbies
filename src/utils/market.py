@@ -102,9 +102,9 @@ def get_risk_free_rate_last_value(decimal: bool = False) -> float:
         df_ecb = pd.read_html(
             io="http://www.ecb.europa.eu/stats/financial_markets_and_interest_rates/euro_short-term_rate/html/index.en.html"
         )[0]
-        risk_free_rate = df_ecb.iloc[0, 1].astype(float)
+        risk_free_rate = float(df_ecb.iloc[0, 1])
     except Exception:
-        risk_free_rate = 3
+        risk_free_rate = 2
     if decimal:
         risk_free_rate = risk_free_rate / 100
     return risk_free_rate

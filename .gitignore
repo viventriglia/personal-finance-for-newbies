@@ -24,3 +24,6 @@ data/in/*.pickle
 
 # vscode
 .vscode/
+
+# local notes
+todo.md

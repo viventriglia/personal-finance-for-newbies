@@ -1,7 +1,7 @@
 from pathlib import Path
 from random import randint
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Data/images
